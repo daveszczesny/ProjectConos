@@ -7,12 +7,18 @@ import (
 	"github.com/daveszczesny/project-cronos/internal/widget"
 )
 
+/*
+  - JSON decoder for Widget Object
+    :return Widget Pointer, Error String
+    :param Json String
+*/
 func JSONDecoder(jsonData string) (*widget.Widget, string) {
 	var widget widget.Widget
 
 	jsonData = strings.ReplaceAll(jsonData, "\n", "")
 	jsonData = strings.TrimSpace(jsonData)
 
+	// Format of json file, must contain each of these attributes
 	fields := map[string]string{
 		"\"icon\":":        "Icon",
 		"\"action\":":      "Action",
@@ -25,7 +31,7 @@ func JSONDecoder(jsonData string) (*widget.Widget, string) {
 	for key, fieldName := range fields {
 		start := strings.Index(jsonData, key)
 		if start == -1 {
-			return nil, "error message, start error"
+			return nil, "Error in JSON data!"
 		}
 
 		start += len(key)
@@ -35,7 +41,7 @@ func JSONDecoder(jsonData string) (*widget.Widget, string) {
 		}
 
 		if end == -1 {
-			return nil, "error message, end error"
+			return nil, "Error parsing JSON data!"
 		}
 
 		valueStr := strings.TrimSpace(jsonData[start : start+end])
@@ -49,48 +55,50 @@ func JSONDecoder(jsonData string) (*widget.Widget, string) {
 		case "RefreshRate":
 			refreshRate, err := strconv.ParseUint(valueStr, 10, 8)
 			if err != nil {
-				return nil, "error message, refresh rate error"
+				return nil, "Error processing: " + string(valueStr) + " in Refresh Rate"
 			}
 			widget.RefreshRate = uint8(refreshRate)
 		case "ExpiryTime":
 			expiryTime, err := strconv.ParseUint(valueStr, 10, 16)
 			if err != nil {
-				return nil, "error message, expiry time error"
+				return nil, "Error processing: " + string(valueStr) + " in Expiry Time"
 			}
 			widget.ExpiryTime = uint16(expiryTime)
+
+		// Both Position and Size are arrays
+		// For simplicity, within arrays semi-colons are used instead of commas
 		case "Position":
-			xy := strings.Split(valueStr, ";")
-			if len(xy) != 2 {
-				return nil, "Error message, two parts not found in position"
+			coords := strings.Split(valueStr, ";")
+			if len(coords) != 2 {
+				return nil, "Error processing Position. Coordinates length not equal to 2"
 			}
-			x, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(xy[0], "[", "")), 10, 8)
+			x, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(coords[0], "[", "")), 10, 8)
 			if err != nil {
-				return nil, "Error message, x is incorrect"
+				return nil, "Error processing x component of coordinates"
 			}
-			y, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(xy[1], "]", "")), 10, 8)
+			y, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(coords[1], "]", "")), 10, 8)
 			if err != nil {
-				return nil, "Error message, y is incorrect"
+				return nil, "Error processing y component of coordinates"
 			}
 			widget.Position.X = uint8(x)
 			widget.Position.Y = uint8(y)
 		case "Size":
-			wh := strings.Split(valueStr, ";")
-			if len(wh) != 2 {
+			res := strings.Split(valueStr, ";")
+			if len(res) != 2 {
 				return nil, "Error message, two parts not found in size"
 			}
-			w, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(wh[0], "[", "")), 10, 16)
+			width, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(res[0], "[", "")), 10, 16)
 			if err != nil {
 				return nil, "Error message, width is incorrect"
 			}
-			h, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(wh[1], "]", "")), 10, 16)
+			height, err := strconv.ParseUint(strings.TrimSpace(strings.ReplaceAll(res[1], "]", "")), 10, 16)
 			if err != nil {
 				return nil, "Error message, height is incorrect"
 			}
-			widget.Size.W = uint16(w)
-			widget.Size.H = uint16(h)
+			widget.Size.W = uint16(width)
+			widget.Size.H = uint16(height)
 
 		}
-
 	}
 
 	return &widget, ""

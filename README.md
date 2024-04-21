@@ -4,9 +4,9 @@
 - other stuff...
 
 # To Run
-From directory
+From root directory
 `tinygo flash -target=arduino -port=COM5 com/project-cronos/main.go`
 
 
 # Current information
-- Build size: 704 bytes / 32 kb
+- Build size: 736 bytes / 32 kb
